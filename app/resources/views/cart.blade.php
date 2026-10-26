@@ -1,0 +1,15 @@
+@extends('layouts.store')
+@section('title', 'Tu carro')
+@section('content')
+<a class="back" href="{{ route('catalog') }}">← Seguir mirando</a><h1>Tu carro</h1><p class="muted">Precios en CLP · El carro no reserva existencias.</p>
+@foreach($notices as $notice)<div class="notice" role="status">{{ $notice }}</div>@endforeach
+@if(!$lines)<section class="panel empty"><h2>Tu carro está vacío</h2><p>Explora los accesorios y elige tu cantidad.</p><a class="button" href="{{ route('catalog') }}">Volver al catálogo</a></section>
+@else
+<div class="cart-layout"><div>
+@foreach($lines as $line)
+@php($quantityError = 'quantity.'.$line['product']->id)
+<article class="panel cart-item"><img src="{{ $line['product']->photo_url }}" alt="Ilustración de {{ $line['product']->name }}" width="180" height="120"><div><h2><a href="{{ route('product', $line['product']->sku) }}">{{ $line['product']->name }}</a></h2><p class="muted">{{ $line['product']->sku }} · Producto ficticio</p><p>{{ $line['quantity'] }} × <strong>${{ number_format($line['unit_price'], 0, ',', '.') }}</strong> c/u</p><p class="muted">{{ $line['minimum'] > 1 ? 'Tramo aplicado desde '.$line['minimum'].' unidades.' : 'Precio al detalle aplicado.' }}</p><p class="price">${{ number_format($line['subtotal'], 0, ',', '.') }}</p><form class="edit" method="post" action="{{ route('cart.update', $line['product']->sku) }}">@csrf @method('PATCH')<div><label for="qty-{{ $line['product']->id }}">Cantidad</label><input class="quantity" id="qty-{{ $line['product']->id }}" type="number" name="quantity" min="1" max="{{ $line['product']->stock }}" step="1" value="{{ $line['quantity'] }}" aria-invalid="{{ $errors->has($quantityError) ? 'true' : 'false' }}" aria-describedby="qty-error-{{ $line['product']->id }}" required><p id="qty-error-{{ $line['product']->id }}" class="field-error">@error($quantityError){{ $message }}@enderror</p></div><button class="outline">Actualizar</button></form><form method="post" action="{{ route('cart.remove', $line['product']->sku) }}">@csrf @method('DELETE')<button class="text-button" aria-label="Quitar {{ $line['product']->name }} del carro">Quitar artículo</button></form>@if($line['next'])<p class="tier">{{ $line['next']['remaining'] === 1 ? 'Te falta' : 'Te faltan' }} <strong>{{ $line['next']['remaining'] }} {{ $line['next']['remaining'] === 1 ? 'unidad' : 'unidades' }}</strong> de este artículo para llegar a {{ $line['next']['quantity'] }}, a <strong>${{ number_format($line['next']['unit_price'], 0, ',', '.') }} c/u</strong>.</p>@endif</div></article>
+@endforeach
+</div><aside class="panel summary"><h2>Resumen del carro</h2><div class="row"><span>Subtotal productos</span><strong>${{ number_format($subtotal, 0, ',', '.') }}</strong></div><hr><h3>Despacho pendiente de cotización</h3><p class="muted">El costo de envío aún no está incluido. No hay un total definitivo.</p><p><strong>Total final pendiente</strong></p><p>Esta demo termina en el carro. No crea pedidos ni realiza cobros.</p></aside></div>
+@endif
+@endsection

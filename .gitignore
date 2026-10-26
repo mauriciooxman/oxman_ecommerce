@@ -1,0 +1,13 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.next/
+dist/
+coverage/
+*.log
+.DS_Store
+_bmad/config.user.toml
+_bmad/custom/*.user.toml
+__pycache__/
+.local/
