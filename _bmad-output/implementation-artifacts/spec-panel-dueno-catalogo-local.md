@@ -2,7 +2,7 @@
 title: 'Panel privado del dueño: catálogo local'
 type: 'feature'
 created: '2026-10-25'
-status: 'in-review'
+status: 'done'
 baseline_commit: 'NO_VCS'
 route: 'dispatch'
 review_loop_iteration: 0

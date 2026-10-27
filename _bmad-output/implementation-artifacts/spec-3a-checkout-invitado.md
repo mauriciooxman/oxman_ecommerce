@@ -2,8 +2,8 @@
 title: '3A — Checkout invitado: pedido persistente con reserva atómica'
 type: 'feature'
 created: '2026-10-26'
-status: 'ready-for-dev'
-route: 'dispatch'
+status: 'in-progress'
+baseline_commit: 'NO_VCS'
 review_loop_iteration: 0
 context:
   - '_bmad-output/implementation-artifacts/epic-3-context.md'
