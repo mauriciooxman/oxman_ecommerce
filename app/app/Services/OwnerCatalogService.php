@@ -39,9 +39,16 @@ class OwnerCatalogService
                     $values['version'] = $product->version + 1;
                 }
                 if ($photo) {
+                    if ($data['remove_photo'] ?? false) {
+                        throw ValidationException::withMessages(['remove_photo' => 'Elige quitar la foto o cargar una nueva, no ambas opciones.']);
+                    }
                     $path = $this->photos->store($photo, $user->store_id);
                     $oldPath = $product->photo_path;
                     $values['photo_path'] = $path;
+                } elseif ($id && ($data['remove_photo'] ?? false)) {
+                    $oldPath = $product->photo_path;
+                    $values['photo_path'] = null;
+                    $values['image'] = 'placeholder.svg';
                 }
                 $product->forceFill($values)->save();
                 $product->tiers()->delete();
@@ -57,7 +64,7 @@ class OwnerCatalogService
             }
             throw $error;
         }
-        if ($oldPath) { Storage::disk('catalog')->delete($oldPath); }
+        if ($oldPath) { DB::afterCommit(fn () => Storage::disk('catalog')->delete($oldPath)); }
         return $product;
     }
 

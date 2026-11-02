@@ -29,6 +29,7 @@ class ProductRequest extends OwnerRequest
             'tiers.*.minimum_quantity' => ['required', 'integer', 'regex:/^[0-9]+$/D', 'between:2,1000000', 'distinct'],
             'tiers.*.unit_price' => ['required', 'integer', 'regex:/^[1-9][0-9]*$/D', 'between:1,1000000000'],
             'photo' => ['nullable', 'file', 'max:5120'],
+            'remove_photo' => ['sometimes', 'boolean', Rule::prohibitedIf(!$this->route('product'))],
         ];
     }
 
@@ -37,6 +38,10 @@ class ProductRequest extends OwnerRequest
         parent::withValidator($validator);
         $validator->after(function ($validator) {
             if ($validator->errors()->isNotEmpty()) { return; }
+            if ($this->boolean('remove_photo') && $this->hasFile('photo')) {
+                $validator->errors()->add('remove_photo', 'Elige quitar la foto o cargar una nueva, no ambas opciones.');
+                return;
+            }
             $previousPrice = (int) $this->input('unit_price');
             $previousMinimum = 1;
             foreach ($this->input('tiers', []) as $index => $tier) {

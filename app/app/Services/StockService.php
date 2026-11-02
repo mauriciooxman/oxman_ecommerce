@@ -34,6 +34,9 @@ class StockService
             if ($after < 0 || $after > 1000000) {
                 throw ValidationException::withMessages(['quantity' => 'El resultado debe estar entre 0 y 1.000.000 unidades.']);
             }
+            if ($after < $product->stock_reservado) {
+                throw ValidationException::withMessages(['quantity' => 'El stock físico no puede quedar por debajo de las '.$product->stock_reservado.' unidades reservadas.']);
+            }
             $movement = $product->movements()->create([
                 'store_id' => $user->store_id, 'user_id' => $user->id, 'operation_id' => $data['operation_id'],
                 'mode' => $data['mode'], 'quantity' => $quantity, 'before' => $product->stock,

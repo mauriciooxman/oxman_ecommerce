@@ -24,7 +24,7 @@ class CartService
         $subtotal = 0;
         foreach ($saved as $id => $entry) {
             $product = $store->products()->with('tiers')->publiclyVisible()->find($id);
-            if (! $product || $product->stock < $entry['quantity']) {
+            if (! $product || $product->available_stock < $entry['quantity']) {
                 $notices[] = 'Un artículo dejó de estar disponible en la cantidad elegida y se quitó del carro. Revisa el catálogo.';
                 unset($saved[$id]);
                 continue;
@@ -50,8 +50,8 @@ class CartService
         }
         $saved = $request->session()->get($this->key($store), []);
         $quantity = (int) $raw + ($add ? ($saved[$product->id]['quantity'] ?? 0) : 0);
-        if (! $product->published || $product->archived_at !== null || $quantity > $product->stock) {
-            throw ValidationException::withMessages(['quantity.'.$product->id => $product->name.': no hay existencias para esa cantidad. Disponibles: '.$product->stock.'.']);
+        if (! $product->published || $product->archived_at !== null || $quantity > $product->available_stock) {
+            throw ValidationException::withMessages(['quantity.'.$product->id => $product->name.': no hay existencias para esa cantidad. Disponibles: '.$product->available_stock.'.']);
         }
         $quote = $this->pricing->quote($product, $quantity);
         $saved[$product->id] = ['quantity' => $quantity, 'unit_price' => $quote['unit_price']];

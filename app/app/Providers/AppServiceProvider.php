@@ -19,6 +19,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Support\Facades\View::composer('owner.layout', function ($view) {
+            $user = auth()->user();
+            $count = $user?->ownsStore()
+                ? \App\Models\Order::forStore($user->store)->whereNull('reviewed_at')->count() : 0;
+            $view->with('unreviewedOrderCount', $count);
+        });
     }
 }

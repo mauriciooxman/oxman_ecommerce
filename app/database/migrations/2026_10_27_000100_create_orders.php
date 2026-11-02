@@ -9,7 +9,7 @@ return new class extends Migration
 {
     /**
      * Guardia: verificar que el destino sea la base exclusiva de demo antes de DDL.
-     * No ejecutar sobre oxman_demo_test ni cualquier otra base.
+     * Solo demo y pruebas locales; rechazar destinos alternativos antes de DDL.
      */
     private function assertDemoDatabase(): void
     {
@@ -17,10 +17,14 @@ return new class extends Migration
         $host = DB::connection()->getConfig('host');
         $port = (string) DB::connection()->getConfig('port');
 
-        if ($db !== 'oxman_demo' || $host !== '127.0.0.1' || $port !== '3307') {
+        if (DB::connection()->getDriverName() !== 'mysql'
+            || ! in_array($db, ['oxman_demo', 'oxman_demo_test'], true)
+            || $host !== '127.0.0.1' || $port !== '3307'
+            || DB::connection()->getConfig('url')
+            || DB::connection()->getConfig('unix_socket')) {
             throw new \RuntimeException(
                 "Guardia de pedidos: destino inesperado ($db en $host:$port). " .
-                "Solo se permite oxman_demo en 127.0.0.1:3307."
+                "Solo se permiten oxman_demo y oxman_demo_test en MySQL 127.0.0.1:3307 sin URL/socket alternativos."
             );
         }
     }

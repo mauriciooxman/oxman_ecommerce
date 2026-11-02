@@ -1,5 +1,40 @@
 # Nota de retoma — Épica 3: pedidos sin pagos reales
 
+## Avisos al dueño — 2026-11-02
+
+Contador por tienda y marca Nuevo; primera apertura autorizada guarda `reviewed_at` sin cambiar estados ni inventario. Correo único por pedido, registrado en la transacción y capturado después del commit exterior con Laravel Mail/log privado. Destinatario por configuración de tienda; referencia, pago real y panel protegido, sin contacto ni token del comprador. Fallos conservan la compra y se registran con ID/código. Sin SMTP real, BMAD ni procesos adicionales. [Captura, configuración, prueba y límites de reintento](avisos-pedidos-local.md).
+
+Respaldo nuevo restaurado/comparado antes de migrar; siete migraciones aplicadas en demo, datos previos íntegros (7 productos/9 tramos). Evidencia nueva: **65 pruebas focalizadas/691 aserciones**, **96 checks HTTP/MySQL** (43 de 3A + 48 de 3B + 5 de avisos), Blade y sintaxis. No se repitió la suite ajena al cambio; cifras inferiores son históricas. Revisión visual/aceptación manual pendientes. Sin hosting, publicación, commit ni push.
+
+## Actualización 3B — 2026-11-02
+
+3B implementada sobre los cambios de 3A conservados sin commit. Un solo agente; sin BMAD, workflows adicionales ni Playwright. Listado/filtro/antigüedad, detalle histórico/comprador, cotización, pago manual, preparación, salida y cancelación disponibles en `/dueno/pedidos`. Reutiliza seguimiento privado de 3A; despacho exige aceptación del comprador, retiro cero se acepta directamente.
+
+Todas las transiciones releen y bloquean el pedido de la tienda autenticada. Entrega/cancelación bloquean productos por id: entrega descuenta físico y reserva, crea auditoría de stock e incrementa versión; cancelación solo libera reserva. Reintentos de cierre devuelven 409, transiciones inválidas 422, pedidos ajenos 404. Cancelar conserva pago/despacho registrados y exige motivo; no hay devoluciones. Se corrigió el resumen compartido para conservar la cotización al registrar despacho y se impide aceptar cotización tras cancelar.
+
+**Evidencia nueva 3B:** **111 pruebas / 1.587 aserciones** (incluye regresión de 3A); **91 checks HTTP/MySQL** de pedidos (43 de 3A + 48 de 3B: doble cancelación, doble entrega, cierre competidor, dos pedidos sobre un producto y aceptación contra cancelación); **34 checks del panel** repetidos. Permisos, aislamiento, CSRF, validaciones, estados, precios históricos y rollback multiartículo comprobados. Rutas con middleware owner, Composer/plataforma, sintaxis y Blade correctos. No confundir con las cifras históricas inferiores.
+
+No requiere migración nueva: consulta de solo lectura confirmó las seis migraciones y tablas de 3A en demo; no se modificaron sus datos ni se repitió respaldo/migración. Tests y arneses ejecutados secuencialmente en `oxman_demo_test`. Sin hosting, publicación, commit ni push. **Pendientes:** revisión visual actual a 360 px/escritorio/teclado y aceptación manual; no se hizo nueva inspección visual ni revisión BMAD. [Recorrido completo para probar](pedidos-local.md).
+
+## Estado vigente — 2026-11-02
+
+Implementación retomada por instrucción de Mauro **sin workflows ni agentes BMAD y sin Playwright**. Los apartados inferiores conservan evidencia histórica; sus instrucciones de continuar BMAD no son el siguiente paso autorizado de esta sesión.
+
+- Git inicial limpio, HEAD `d2b8061`; se conservó la migración existente `2026_10_27_000100_create_orders.php`. Sin commit ni push. Spec 3A aprobada como referencia; 3B no iniciada.
+- Guardia corregida: únicamente MySQL `127.0.0.1:3307`, bases `oxman_demo` / `oxman_demo_test`, sin URL/socket alternativos. Prueba acepta ambas y rechaza base ajena, host, puerto, driver, URL y socket antes de `up`/`down`.
+- Antes de tocar la demo: cinco migraciones aplicadas, tabla orders ausente; datadir local comprobado por SELECT. Respaldo histórico `antes-pedidos-3a.sql` conservado. Nuevo `.local/backups/antes-pedidos-3a-20261102.sql` restaurado en **pruebas** y comparado por conteos/hash de todas las filas de todas las tablas; manifiesto SHA-256 junto al dump. No se imprimieron datos privados.
+- Migración aplicada después de las pruebas: ahora seis migraciones; tablas de pedidos y columna de reservas presentes. Comparación posterior preservó íntegramente todos los datos previos (7 productos / 9 tramos incluidos). Sin seed ni fresh en demo.
+- 3A implementada: revisión invitada, validación de contacto/entrega, pedido/líneas/evento/reserva en transacción, precios recalculados, referencia y enlace privado, aceptación idempotente de cotización. Confirmación por referencia exige la sesión emisora; seguimiento exige token y tienda correcta y omite dirección/teléfono/correo. Respuestas privadas sin caché ni referer. Snapshot e historial protegidos contra edición por modelos.
+- Disponible público = físico − reservado (catálogo/ficha/carro/precios). StockService impide tanto conteo como variación por debajo de reservas bajo bloqueo. Checkout serializa por fila de tienda, después bloquea productos por id; decisión conservadora para esta demo local, sin servicios adicionales.
+
+**Evidencia nueva de esta sesión:** suite base tras guardia **54 pruebas / 994 aserciones** (incluye las 53 previas); suite final **80 pruebas / 1.345 aserciones**. `verify-orders-runtime.php`: **43 comprobaciones** HTTP real/CSRF/cookies/privacidad y conexiones MySQL independientes: última unidad, misma clave, reservas contra ajustes/conteos, ganando checkout y ganando ajuste/conteo. `verify-owner-runtime.php`: **34 comprobaciones** existentes repetidas y aprobadas. Composer estricto/plataforma, rutas y caché Blade correctos. Estos resultados reemplazan la incertidumbre del diagnóstico de octubre; no son revisiones BMAD.
+
+**Pendiente real:** revisión visual del nuevo checkout a 360 px/escritorio, teclado y aceptación manual de Mauro. Se intentó Computer Use; terminó al no poder verificar la URL de Chrome con suficiente confianza. No se capturó ni verificó visualmente el checkout. Sin cierre/revisión BMAD ejecutados. No hay bloqueo técnico conocido en las pruebas ejecutadas.
+
+**Probar ahora:** [guía del checkout](probar-checkout-3a.md). Servidor local iniciado en `http://127.0.0.1:8000`; si no está activo en la siguiente sesión, usar el arranque documentado. Las reservas de demo no vencen automáticamente; cada confirmación real en demo persiste. No ejecutar `--prepare`/`--apply` otra vez sobre el respaldo ya usado; la utilidad aborta ante respaldo desactualizado. Para inspeccionar: `php tools/verify-orders-migration.php` sin opciones.
+
+---
+
 Generada: 2026-10-26. Para usar al inicio de una sesión nueva.
 
 ## Estado al cerrar esta sesión

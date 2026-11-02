@@ -226,6 +226,47 @@ class OwnerPanelTest extends TestCase
         $this->loginAs($this->other)->get('/dueno/productos/'.$this->product->id.'/foto')->assertNotFound();
     }
 
+    public function test_quitar_foto_al_guardar_deja_imagen_generica_y_elimina_archivo(): void
+    {
+        $this->loginAs()->put('/dueno/productos/'.$this->product->id, $this->data()+['photo'=>UploadedFile::fake()->image('anterior.png')])->assertRedirect();
+        $item = $this->product->fresh();
+        $path = $item->photo_path;
+        $this->get('/dueno/productos/'.$item->id)->assertOk()->assertSee('Eliminar la foto actual');
+        $this->put('/dueno/productos/'.$item->id, $this->data($item)+['remove_photo'=>'1'])->assertRedirect();
+        $this->assertNull($item->fresh()->photo_path);
+        $this->assertSame('placeholder.svg', $item->fresh()->image);
+        Storage::disk('catalog')->assertMissing($path);
+        $this->get('/dueno/productos/'.$item->id.'/foto')->assertNotFound();
+        $this->get('/productos/DEMO-C1?foto=1')->assertNotFound();
+        $this->get('/productos/DEMO-C1')->assertOk()->assertSee('images/placeholder.svg');
+    }
+
+    public function test_quitar_foto_respeta_tienda_version_y_validacion(): void
+    {
+        $this->loginAs()->put('/dueno/productos/'.$this->product->id, $this->data()+['photo'=>UploadedFile::fake()->image('anterior.png')]);
+        $item = $this->product->fresh(); $path = $item->photo_path;
+        $this->loginAs($this->other)->put('/dueno/productos/'.$item->id, $this->data($item)+['remove_photo'=>1])->assertNotFound();
+        $this->loginAs()->put('/dueno/productos/'.$item->id, $this->data($item)+['remove_photo'=>1,'photo'=>UploadedFile::fake()->image('nueva.png')])->assertSessionHasErrors('remove_photo');
+        $this->put('/dueno/productos/'.$item->id, array_replace($this->data($item), ['remove_photo'=>1,'version'=>1]))->assertStatus(409);
+        $this->put('/dueno/productos/'.$item->id, array_replace($this->data($item), ['remove_photo'=>1,'name'=>'']))->assertSessionHasErrors('name');
+        $this->assertSame($path, $item->fresh()->photo_path);
+        Storage::disk('catalog')->assertExists($path);
+    }
+
+    public function test_fallo_al_guardar_conserva_foto_que_se_queria_quitar(): void
+    {
+        $this->loginAs()->put('/dueno/productos/'.$this->product->id, $this->data()+['photo'=>UploadedFile::fake()->image('anterior.png')]);
+        $item = $this->product->fresh(); $path = $item->photo_path;
+        \App\Models\PriceTier::creating(fn () => throw new \RuntimeException('Fallo ficticio'));
+        try {
+            app(\App\Services\OwnerCatalogService::class)->save($this->owner, $item->id, $this->data($item)+['remove_photo'=>1], null);
+            $this->fail('Debió fallar');
+        } catch (\RuntimeException $error) { $this->assertSame('Fallo ficticio', $error->getMessage()); }
+        finally { \App\Models\PriceTier::flushEventListeners(); }
+        $this->assertSame($path, $item->fresh()->photo_path);
+        Storage::disk('catalog')->assertExists($path);
+    }
+
     public function test_fotos_invalidas_y_fallo_disco_conservan_producto_y_foto(): void
     {
         $this->loginAs();

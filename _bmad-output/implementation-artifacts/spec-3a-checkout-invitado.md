@@ -3,7 +3,7 @@ title: '3A — Checkout invitado: pedido persistente con reserva atómica'
 type: 'feature'
 created: '2026-10-26'
 status: 'in-progress'
-baseline_commit: 'NO_VCS'
+baseline_commit: 'd2b8061'
 review_loop_iteration: 0
 context:
   - '_bmad-output/implementation-artifacts/epic-3-context.md'
@@ -93,7 +93,11 @@ context:
 
 ## Implementation Notes
 
-Pendiente hasta implementación.
+Implementada el 2026-11-02 por instrucción de Mauro sin workflows/agentes BMAD. Migración existente conservada como `2026_10_27_000100_create_orders.php` (las rutas con fecha 26 en el mapa/tareas son históricas). Detalles y evidencia actual en `docs/retoma-pedidos-epic3.md` y `docs/probar-checkout-3a.md`.
+
+Confirmación por referencia exige sesión emisora; seguimiento por token y tienda. Las líneas revisadas y las claves se emiten en servidor. Se conserva la identidad del formulario completado en sesión para reintentos, descartando su clave pendiente. OrderService bloquea tienda y luego productos ordenados por id para serializar claves sin pedido previo; StockService conserva el mismo bloqueo de producto y valida reservas. No se implementó 3B.
+
+Validación técnica: 80 pruebas/1.345 aserciones; 43 checks HTTP/MySQL de pedidos y 34 checks del panel repetidos, Composer/plataforma/rutas/Blade aprobados. Respaldo nuevo restaurado y comparado en pruebas antes de aplicar migración incremental en demo: datos previos íntegros, 7 productos/9 tramos. Estado `in-progress` conservado: revisión visual y aceptación manual pendientes; no se declara revisión/cierre BMAD.
 
 ## Spec Change Log
 

@@ -36,6 +36,8 @@ return [
     */
 
     'mailers' => [
+        // Estos avisos siempre se capturan: MAIL_MAILER no los conecta a SMTP.
+        'owner_order_capture' => ['transport' => 'log', 'channel' => 'order_notices'],
 
         'smtp' => [
             'transport' => 'smtp',

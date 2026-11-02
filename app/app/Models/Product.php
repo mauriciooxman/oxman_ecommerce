@@ -11,7 +11,12 @@ class Product extends Model
 
     protected function casts(): array
     {
-        return ['published' => 'boolean', 'stock' => 'integer', 'unit_price' => 'integer', 'archived_at' => 'datetime', 'version' => 'integer'];
+        return ['published' => 'boolean', 'stock' => 'integer', 'stock_reservado' => 'integer', 'unit_price' => 'integer', 'archived_at' => 'datetime', 'version' => 'integer'];
+    }
+
+    public function getAvailableStockAttribute(): int
+    {
+        return max(0, $this->stock - (int) $this->stock_reservado);
     }
 
     public function tiers(): HasMany

@@ -24,7 +24,8 @@ class StorefrontController extends Controller
     public function index(Request $request)
     {
         $store = $this->store();
-        $filters = $request->validate(['q' => ['nullable', 'string', 'max:100'], 'category' => ['nullable', 'string', 'max:60']]);
+        $filters = $request->validate(['q' => ['nullable', 'string', 'max:100'], 'category' => ['nullable', 'string', 'max:60'], 'page' => ['nullable', 'integer', 'min:1', 'max:1000000']]);
+        $request->session()->put('catalog.'.$store->id.'.filters', array_filter($filters, fn ($value) => $value !== null && $value !== ''));
         $query = $store->products()->with('tiers')->publiclyVisible();
         $search = trim($filters['q'] ?? '');
         if ($search !== '') {
@@ -53,21 +54,40 @@ class StorefrontController extends Controller
                 try { fpassthru($stream); } finally { fclose($stream); }
             }, 200, ['Content-Type' => 'image/webp', 'X-Content-Type-Options' => 'nosniff', 'Cache-Control' => 'no-store']);
         }
-        $quote = $product->stock ? $pricing->quote($product, 1) : null;
+        $quote = $product->available_stock ? $pricing->quote($product, 1) : null;
         return view('product', compact('store', 'product', 'quote'));
     }
 
     public function cart(Request $request, CartService $cart)
     {
         $store = $this->store();
-        return view('cart', ['store' => $store, ...$cart->snapshot($request, $store)]);
+        return view('cart', ['store' => $store, 'catalogUrl' => $this->catalogUrl($request, $store), ...$cart->snapshot($request, $store)]);
     }
 
     public function add(Request $request, string $sku, CartService $cart)
     {
         $store = $this->store();
-        $cart->change($request, $store, $this->product($store, $sku), true);
+        $product = $this->product($store, $sku);
+        try {
+            $cart->change($request, $store, $product, true);
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            if ($request->boolean('from_catalog') && !$request->expectsJson()) {
+                $error->redirectTo($this->catalogUrl($request, $store).'#qty-'.$product->id);
+            }
+            throw $error;
+        }
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Artículo agregado. El carro no reserva existencias.', 'cart_url' => route('cart')]);
+        }
+        if ($request->boolean('from_catalog')) {
+            return redirect()->to($this->catalogUrl($request, $store).'#catalog-item-'.$product->id)->with('catalog_added', $product->id);
+        }
         return redirect()->route('cart')->with('status', 'Artículo agregado. El carro no reserva existencias.');
+    }
+
+    private function catalogUrl(Request $request, Store $store): string
+    {
+        return route('catalog', $request->session()->get('catalog.'.$store->id.'.filters', []));
     }
 
     public function update(Request $request, string $sku, CartService $cart)

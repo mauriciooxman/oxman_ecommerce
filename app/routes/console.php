@@ -7,6 +7,23 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+Artisan::command('orders:notify-pending {--store=}', function () {
+    $db = config('database.connections.mysql');
+    if (!app()->environment(['local', 'testing']) || config('database.default') !== 'mysql'
+        || $db['host'] !== '127.0.0.1' || (string)$db['port'] !== '3307'
+        || !in_array($db['database'], ['oxman_demo', 'oxman_demo_test'], true) || !empty($db['url']) || !empty($db['unix_socket'])) {
+        $this->error('Solo bases locales autorizadas.');
+        return 1;
+    }
+    $store = \App\Models\Store::where('active', true)->find($this->option('store'));
+    if (!$store) { $this->error('Indica --store=ID de una tienda activa.'); return 1; }
+    $ids = \Illuminate\Support\Facades\DB::table('order_owner_notices')->join('orders', 'orders.id', '=', 'order_owner_notices.order_id')
+        ->where('orders.store_id', $store->id)->where('order_owner_notices.status', 'pending')->orderBy('order_id')->limit(1000)->pluck('order_id');
+    foreach ($ids as $id) { app(\App\Services\OwnerOrderNotice::class)->attempt((int)$id); }
+    $this->info('Avisos pendientes procesados: '.$ids->count().'. Solo captura local; revisar su estado en order_owner_notices.');
+    return 0;
+})->purpose('Capturar avisos pendientes de una tienda, sin reenviar intentos previos');
+
 Artisan::command('owner:account {email} {--store=} {--role=} {--reset}', function () {
     $db = config('database.connections.mysql');
     if (! app()->environment(['local', 'testing']) || config('database.default') !== 'mysql'

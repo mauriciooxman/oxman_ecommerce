@@ -214,4 +214,59 @@ class StorefrontTest extends TestCase
             $this->assertNotSame($saved, session($this->key()));
         }
     }
+
+    public function test_catalogo_agrega_sin_navegar_consolida_y_recalcula_sin_reservar(): void
+    {
+        $this->get('/?q=Cable&category=Cables&page=2')->assertOk()->assertSee('Agregar al carro')->assertSee('Ver producto')->assertSee('value="1"', false)->assertSee('role="status"', false);
+        $this->withCookie(config('session.cookie'), session()->getId());
+        $product = Product::where('sku', 'DEMO-C1')->firstOrFail();
+        $this->postJson('/carro/DEMO-C1', ['quantity' => 5, 'from_catalog' => 1, 'unit_price' => 1])->assertOk()
+            ->assertJsonPath('cart_url', route('cart'))->assertJsonPath('message', 'Artículo agregado. El carro no reserva existencias.');
+        $this->postJson('/carro/DEMO-C1', ['quantity' => 1, 'from_catalog' => 1, 'unit_price' => 1])->assertOk();
+        $this->assertSame(['quantity' => 6, 'unit_price' => 2500], session($this->key().'.'.$product->id));
+        $this->assertCount(1, session($this->key()));
+        $this->get('/carro')->assertSee('15.000')->assertSee('← Seguir comprando')->assertSee('href="'.e(route('catalog', ['q' => 'Cable', 'category' => 'Cables', 'page' => 2])).'"', false);
+        $this->assertSame(40, $product->fresh()->stock);
+        $this->assertSame(0, $product->fresh()->stock_reservado);
+    }
+
+    #[DataProvider('invalidQuantities')]
+    public function test_compra_directa_invalida_conserva_carro_y_contexto(mixed $invalid): void
+    {
+        $this->get('/?q=Cable&category=Cables&page=2');
+        $this->withCookie(config('session.cookie'), session()->getId());
+        $this->postJson('/carro/DEMO-C1', ['quantity' => 5, 'from_catalog' => 1])->assertOk();
+        $before = session($this->key());
+        $id = Product::where('sku', 'DEMO-C1')->firstOrFail()->id;
+        $this->postJson('/carro/DEMO-C1', ['quantity' => $invalid, 'from_catalog' => 1])->assertUnprocessable()->assertJsonValidationErrors('quantity.'.$id);
+        $this->assertSame($before, session($this->key()));
+        $this->post('/carro/DEMO-C1', ['quantity' => $invalid, 'from_catalog' => 1])->assertRedirect(route('catalog', ['q' => 'Cable', 'category' => 'Cables', 'page' => 2]).'#qty-'.$id);
+        $this->get('/?q=Cable&category=Cables&page=2')->assertOk()->assertSee('aria-invalid="true"', false);
+    }
+
+    public function test_fallback_conserva_filtros_pagina_y_regreso_incluso_carro_vacio(): void
+    {
+        $url = route('catalog', ['q' => 'Cable', 'category' => 'Cables', 'page' => 3]);
+        $this->get($url);
+        $this->withCookie(config('session.cookie'), session()->getId());
+        $product = Product::where('sku', 'DEMO-C1')->firstOrFail();
+        $this->post('/carro/DEMO-C1', ['quantity' => 1, 'from_catalog' => 1, 'return_url' => 'https://example.test'])->assertRedirect($url.'#catalog-item-'.$product->id);
+        $this->get($url)->assertOk()->assertSee('Artículo agregado')->assertSee('Ver carro');
+        $this->delete('/carro/DEMO-C1')->assertRedirect('/carro');
+        $this->get('/carro')->assertSee('Tu carro está vacío')->assertSee('← Seguir comprando')->assertSee('href="'.e($url).'"', false);
+        $this->get('/');
+        $this->get('/carro')->assertSee('href="'.route('catalog').'"', false);
+    }
+
+    public function test_agotado_y_totalmente_reservado_no_permiten_compra_directa(): void
+    {
+        $this->get('/?q=DEMO-C2')->assertOk()->assertSee('Sin stock')->assertSee('disabled')->assertSee('Agregar al carro');
+        $this->postJson('/carro/DEMO-C2', ['quantity' => 1, 'from_catalog' => 1])->assertUnprocessable();
+        $product = Product::where('sku', 'DEMO-C1')->firstOrFail();
+        $product->update(['stock_reservado' => $product->stock]);
+        $this->get('/?q=DEMO-C1')->assertSee('Sin stock')->assertSee('disabled');
+        $this->postJson('/carro/DEMO-C1', ['quantity' => 1, 'from_catalog' => 1])->assertUnprocessable();
+        $this->assertEmpty(session($this->key(), []));
+        $this->assertSame(40, $product->fresh()->stock_reservado);
+    }
 }

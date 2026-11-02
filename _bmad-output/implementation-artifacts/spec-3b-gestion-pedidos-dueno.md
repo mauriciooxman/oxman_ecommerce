@@ -2,7 +2,7 @@
 title: '3B — Gestión de pedidos por el dueño: cotización, pago, preparación, entrega y cancelación'
 type: 'feature'
 created: '2026-10-26'
-status: 'ready-for-dev'
+status: 'in-progress'
 route: 'dispatch'
 review_loop_iteration: 0
 context:
@@ -94,7 +94,9 @@ context:
 
 ## Implementation Notes
 
-Pendiente hasta implementación.
+Implementación y validación técnica completadas el 2026-11-02 por solicitud de Mauro, sin BMAD/workflows/agentes adicionales. Esquema de 3A reutilizado sin nueva migración. Estado conservado en `in-progress` por revisión visual y aceptación manual pendientes; no representa cierre formal BMAD. [Estado y evidencia](../../docs/retoma-pedidos-epic3.md), [recorrido de prueba](../../docs/pedidos-local.md).
+
+Transiciones bajo bloqueo del pedido; productos bloqueados por id al cerrar. Entrega registra movimiento auditado y versión, cancelación no cambia físico. Se respeta la modalidad original: solo retiro permite cero/aceptación directa. Se conserva el resumen de cotización después del despacho y se rechaza aceptación de un cancelado. No se agregaron pagos reales ni vencimiento.
 
 ## Spec Change Log
 

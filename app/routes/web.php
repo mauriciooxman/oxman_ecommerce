@@ -10,10 +10,28 @@ Route::post('/carro/{sku}', [StorefrontController::class, 'add'])->name('cart.ad
 Route::patch('/carro/{sku}', [StorefrontController::class, 'update'])->name('cart.update');
 Route::delete('/carro/{sku}', [StorefrontController::class, 'remove'])->name('cart.remove');
 
+Route::middleware(\App\Http\Middleware\PrivateCheckout::class)->group(function () {
+    $controller = \App\Http\Controllers\CheckoutController::class;
+    Route::get('/checkout/revisar', [$controller, 'review'])->name('checkout.review');
+    Route::post('/checkout/confirmar', [$controller, 'confirm'])->name('checkout.confirm');
+    Route::get('/checkout/confirmacion/{referencia}', [$controller, 'confirmation'])->name('checkout.confirmation');
+    Route::get('/pedido/seguimiento/{token}', [$controller, 'tracking'])->name('orders.tracking');
+    Route::post('/pedido/seguimiento/{token}/aceptar-cotizacion', [$controller, 'acceptQuote'])->name('orders.accept');
+});
+
 Route::prefix('dueno')->name('owner.')->middleware('owner:login')->group(function () {
     Route::get('/ingresar', [\App\Http\Controllers\Owner\AuthController::class, 'create'])->name('login');
     Route::post('/ingresar', [\App\Http\Controllers\Owner\AuthController::class, 'store'])->name('authenticate');
     Route::middleware('owner')->group(function () {
+        Route::prefix('pedidos')->name('orders.')->controller(\App\Http\Controllers\Owner\OrderController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{order}', 'show')->whereNumber('order')->name('show');
+            Route::post('/{order}/cancelar', 'cancel')->whereNumber('order')->name('cancel');
+            Route::post('/{order}/cotizar-despacho', 'quoteShipping')->whereNumber('order')->name('quote');
+            Route::post('/{order}/confirmar-pago', 'confirmPayment')->whereNumber('order')->name('payment');
+            Route::post('/{order}/preparacion', 'toPreparation')->whereNumber('order')->name('prepare');
+            Route::post('/{order}/entregar', 'deliver')->whereNumber('order')->name('deliver');
+        });
         Route::post('/salir', [\App\Http\Controllers\Owner\AuthController::class, 'destroy'])->name('logout');
         Route::get('/', [\App\Http\Controllers\Owner\CatalogController::class, 'index'])->name('products');
         Route::get('/productos/nuevo', [\App\Http\Controllers\Owner\CatalogController::class, 'create'])->name('create');

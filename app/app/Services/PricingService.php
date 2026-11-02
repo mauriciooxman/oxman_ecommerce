@@ -9,7 +9,7 @@ class PricingService
 {
     public function quote(Product $product, int $quantity): array
     {
-        if ($quantity < 1 || $quantity > $product->stock) {
+        if ($quantity < 1 || $quantity > $product->available_stock) {
             throw new InvalidArgumentException('La cantidad debe estar entre 1 y las existencias disponibles.');
         }
         $price = $product->unit_price;
@@ -19,7 +19,7 @@ class PricingService
             if ($quantity >= $tier->minimum_quantity) {
                 $price = $tier->unit_price;
                 $minimum = $tier->minimum_quantity;
-            } elseif ($tier->minimum_quantity <= $product->stock && $next === null) {
+            } elseif ($tier->minimum_quantity <= $product->available_stock && $next === null) {
                 $next = ['remaining' => $tier->minimum_quantity - $quantity,
                     'quantity' => $tier->minimum_quantity, 'unit_price' => $tier->unit_price];
             }

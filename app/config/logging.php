@@ -51,6 +51,11 @@ return [
     */
 
     'channels' => [
+        'order_notices' => [
+            'driver' => 'single',
+            'path' => storage_path('app/private/order-notices/mail.log'),
+            'level' => 'debug',
+        ],
 
         'stack' => [
             'driver' => 'stack',
