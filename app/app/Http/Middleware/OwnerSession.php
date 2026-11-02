@@ -19,6 +19,7 @@ class OwnerSession
         }
         if ($access === 'private') {
             if (! Auth::check()) {
+                if ($request->expectsJson()) { return response()->json(['message' => 'Sesión vencida.'], 401)->header('Cache-Control', 'no-store, private'); }
                 return redirect()->route('owner.login');
             }
             $request->user()->refresh()->load('store');
@@ -26,6 +27,7 @@ class OwnerSession
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
+                if ($request->expectsJson()) { return response()->json(['message' => 'Sesión vencida.'], 401)->header('Cache-Control', 'no-store, private'); }
                 return redirect()->route('owner.login');
             }
             abort_unless($request->user()->ownsStore(), 403);

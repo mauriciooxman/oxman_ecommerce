@@ -258,6 +258,22 @@ class StorefrontTest extends TestCase
         $this->get('/carro')->assertSee('href="'.route('catalog').'"', false);
     }
 
+    public function test_contador_del_carro_suma_unidades_y_se_actualiza_al_agregar_editar_y_vaciar(): void
+    {
+        $this->get('/')->assertSee('Tu carro vacío');
+        $this->withCookie(config('session.cookie'), session()->getId());
+        $this->postJson('/carro/DEMO-C1', ['quantity' => 2])->assertOk()->assertJsonPath('cart_count', 2);
+        $this->postJson('/carro/DEMO-C1', ['quantity' => 1])->assertJsonPath('cart_count', 3);
+        $this->postJson('/carro/DEMO-A1', ['quantity' => 1])->assertJsonPath('cart_count', 4);
+        $this->get('/')->assertSee('cart-link has-items', false)->assertSee('Tu carro, 4 unidades');
+        $this->patch('/carro/DEMO-C1', ['quantity' => 1]);
+        $this->get('/carro')->assertSee('Tu carro, 2 unidades');
+        $this->delete('/carro/DEMO-C1');
+        $this->get('/productos/DEMO-A1')->assertSee('Tu carro, 1 unidad');
+        $this->delete('/carro/DEMO-A1');
+        $this->get('/carro')->assertSee('Tu carro vacío')->assertDontSee('cart-link has-items', false);
+    }
+
     public function test_agotado_y_totalmente_reservado_no_permiten_compra_directa(): void
     {
         $this->get('/?q=DEMO-C2')->assertOk()->assertSee('Sin stock')->assertSee('disabled')->assertSee('Agregar al carro');

@@ -36,6 +36,12 @@ document.querySelectorAll('[data-catalog-add]').forEach(form => {
             link.href = result.cart_url;
             link.textContent = 'Ver carro';
             status.replaceChildren(document.createTextNode(`${result.message} `), link);
+            const cartLink = document.querySelector('.cart-link');
+            const badge = cartLink.querySelector('[data-cart-count]');
+            badge.textContent = String(result.cart_count);
+            badge.hidden = result.cart_count === 0;
+            cartLink.classList.toggle('has-items', result.cart_count > 0);
+            cartLink.setAttribute('aria-label', `Tu carro, ${result.cart_count} ${result.cart_count === 1 ? 'unidad' : 'unidades'}`);
         } catch {
             // Un fallo de red puede ocurrir después de guardar: no reenviar automáticamente.
             const link = document.createElement('a');

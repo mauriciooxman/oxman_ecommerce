@@ -1,5 +1,11 @@
 # Nota de retoma — Épica 3: pedidos sin pagos reales
 
+## Alertas automáticas del panel — 2026-11-02
+
+Consulta cada 20 s con cursor por ID y datos mínimos, aviso destacado, contador y título de pestaña. Sonido solo tras clic explícito, prueba/silencio, coordinación localStorage/Web Locks y una señal por lote entre pestañas. Sin cambiar revisión ni estados desde el aviso; expiración detiene consultas y errores aplican backoff. Sin migración, BMAD, dependencias, hosting, commit ni push. [Uso y límites reales](avisos-pedidos-local.md#alertas-automáticas-del-panel).
+
+Evidencia nueva: **41 pruebas Laravel / 343 aserciones**, **9 pruebas JavaScript simuladas**, sintaxis/ruta/Blade correctos. Revisión visual, sonora y varias pestañas en navegador real pendientes. Requiere panel abierto y conexión; segundo plano/suspensión/cierre del navegador pueden impedir el aviso.
+
 ## Avisos al dueño — 2026-11-02
 
 Contador por tienda y marca Nuevo; primera apertura autorizada guarda `reviewed_at` sin cambiar estados ni inventario. Correo único por pedido, registrado en la transacción y capturado después del commit exterior con Laravel Mail/log privado. Destinatario por configuración de tienda; referencia, pago real y panel protegido, sin contacto ni token del comprador. Fallos conservan la compra y se registran con ID/código. Sin SMTP real, BMAD ni procesos adicionales. [Captura, configuración, prueba y límites de reintento](avisos-pedidos-local.md).

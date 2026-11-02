@@ -25,6 +25,7 @@ Route::prefix('dueno')->name('owner.')->middleware('owner:login')->group(functio
     Route::middleware('owner')->group(function () {
         Route::prefix('pedidos')->name('orders.')->controller(\App\Http\Controllers\Owner\OrderController::class)->group(function () {
             Route::get('/', 'index')->name('index');
+            Route::get('/avisos', 'alerts')->name('alerts');
             Route::get('/{order}', 'show')->whereNumber('order')->name('show');
             Route::post('/{order}/cancelar', 'cancel')->whereNumber('order')->name('cancel');
             Route::post('/{order}/cotizar-despacho', 'quoteShipping')->whereNumber('order')->name('quote');

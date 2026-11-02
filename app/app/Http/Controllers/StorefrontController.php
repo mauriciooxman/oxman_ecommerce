@@ -77,7 +77,7 @@ class StorefrontController extends Controller
             throw $error;
         }
         if ($request->expectsJson()) {
-            return response()->json(['message' => 'Artículo agregado. El carro no reserva existencias.', 'cart_url' => route('cart')]);
+            return response()->json(['message' => 'Artículo agregado. El carro no reserva existencias.', 'cart_url' => route('cart'), 'cart_count' => $cart->quantityCount($request, $store)]);
         }
         if ($request->boolean('from_catalog')) {
             return redirect()->to($this->catalogUrl($request, $store).'#catalog-item-'.$product->id)->with('catalog_added', $product->id);

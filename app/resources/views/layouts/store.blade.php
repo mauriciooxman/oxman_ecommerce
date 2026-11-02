@@ -4,7 +4,7 @@
 <body>
 <a class="skip" href="#contenido">Ir al contenido</a>
 <div class="demo">Demo local · Comercio, productos, compatibilidad, precios y existencias ficticios</div>
-<header class="header wrap"><a class="brand" href="{{ route('catalog') }}"><span class="logo">{{ $store->initials }}</span><span><strong>{{ $store->name }}</strong><small>Accesorios de celular</small></span></a><nav aria-label="Navegación principal"><a href="{{ route('catalog') }}">Catálogo</a><a class="cart-link" href="{{ route('cart') }}">Tu carro →</a></nav></header>
+<header class="header wrap"><a class="brand" href="{{ route('catalog') }}"><span class="logo">{{ $store->initials }}</span><span><strong>{{ $store->name }}</strong><small>Accesorios de celular</small></span></a><nav aria-label="Navegación principal"><a href="{{ route('catalog') }}">Catálogo</a><a class="cart-link {{ $cartQuantityCount > 0 ? 'has-items' : '' }}" href="{{ route('cart') }}" aria-label="{{ $cartQuantityCount > 0 ? 'Tu carro, '.$cartQuantityCount.' '.($cartQuantityCount === 1 ? 'unidad' : 'unidades') : 'Tu carro vacío' }}">Tu carro <span class="cart-count" data-cart-count aria-hidden="true" @if($cartQuantityCount === 0) hidden @endif>{{ $cartQuantityCount }}</span> <span aria-hidden="true">→</span></a></nav></header>
 <main class="wrap" id="contenido">
 @if(session('status'))<div class="notice" role="status">{{ session('status') }}</div>@endif
 @if($errors->any())

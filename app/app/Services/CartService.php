@@ -16,6 +16,11 @@ class CartService
         return 'carts.'.$store->id;
     }
 
+    public function quantityCount(Request $request, Store $store): int
+    {
+        return array_sum(array_column($request->session()->get($this->key($store), []), 'quantity'));
+    }
+
     public function snapshot(Request $request, Store $store): array
     {
         $saved = $request->session()->get($this->key($store), []);

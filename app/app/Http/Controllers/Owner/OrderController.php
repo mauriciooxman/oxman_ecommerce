@@ -13,6 +13,22 @@ class OrderController
     {
         return Order::forStore($request->user()->store)->findOrFail($id);
     }
+    public function alerts(Request $request)
+    {
+        $data = $request->validate(['after' => ['nullable', 'integer', 'min:0']]);
+        $query = Order::forStore($request->user()->store);
+        $latest = (int)(clone $query)->max('id');
+        $after = isset($data['after']) ? (int)$data['after'] : $latest;
+        $arrivals = (clone $query)->where('id', '>', $after)->where('id', '<=', $latest)
+            ->select(['id', 'reference', 'modalidad'])->withSum('lines as units', 'cantidad')->withSum('lines as product_subtotal', 'subtotal')
+            ->orderBy('id')->limit(25)->get();
+        return response()->json([
+            'unreviewed_count' => (clone $query)->whereNull('reviewed_at')->count(),
+            'cursor' => (string)($arrivals->last()?->id ?? max($after, $latest)),
+            'orders' => $arrivals->map(fn ($order) => ['id' => (string)$order->id, 'reference' => $order->reference,
+                'units' => (int)$order->units, 'product_subtotal' => (int)$order->product_subtotal, 'delivery' => $order->modalidad]),
+        ]);
+    }
     public function index(Request $request)
     {
         $filters = $request->validate(['estado' => ['nullable', \Illuminate\Validation\Rule::in(Order::STATES)]]);
